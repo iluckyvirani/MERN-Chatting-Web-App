@@ -26,11 +26,11 @@ routes.post('/login', async (req, res) => {
         // validate from mongodb
         let user = await UserModel.findOne({ userName: req.body.userName });
         if (!user) {
-            return res.status(400).json("Invalid Credntials");
+            return res.status(400).json("Invalid Username");
         }
         let isMatch = await bcrypt.compare(req.body.password, user.password);
         if (!isMatch) {
-            return res.status(400).json("Invalid Credntials");
+            return res.status(400).json("Invalid password");
         }
         const payload = {
             id: user._id,
@@ -104,6 +104,38 @@ routes.post('/signup',async(req,res)=>{
             res.send(err);
         })
     }
+})
+
+// User list api
+
+routes.get('/', async (req,res)=>{
+    // from user api header
+    let token = req.headers.auth;
+    //check token is present
+    if(!token){
+        return  res.status(401).json('Access denied');
+    }
+    // validing token 0 => payload, 1=>secret, 2=>option with expiry
+    let jwtUser;
+    try{
+        jwtUser =await jwt.verify(token.split(' ')[1], process.env.JWT_SECRET);
+    } catch(err){
+        console.log(err);
+        return res.status(401).json("Invalid Token");
+    }
+    console.log({jwtUser});
+    // jwtUser is alooged in user
+    if(!jwtUser){
+        return res.status(401).json("Invalid Token");
+    }
+    //find all users and send
+    let users = await UserModel.aggregate()
+        .project({
+            password:0,
+            date:0,
+            __v:0
+        });
+    res.send(users);
 })
 
 module.exports = routes;
