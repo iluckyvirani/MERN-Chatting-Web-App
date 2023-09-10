@@ -5,11 +5,11 @@ const UserSchema = new Schema(
     {
         name:{
             require:true,
-            type: String,
+            type: String
         },
         userName:{
             require:true,
-            type:string,
+            type:String,
             unique: true
         },
         date:{
