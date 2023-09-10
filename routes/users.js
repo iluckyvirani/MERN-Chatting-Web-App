@@ -129,7 +129,7 @@ routes.get('/', async (req,res)=>{
         return res.status(401).json("Invalid Token");
     }
     //find all users and send
-    let users = await UserModel.aggregate()
+    let users = await UserModel.aggregate() 
         .project({
             password:0,
             date:0,
