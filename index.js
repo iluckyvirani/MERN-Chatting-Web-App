@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 // own import for routes
 const users = require('./routes/users');
+const messages = require('./routes/messages')
 // const messages = require('./routes/messages');
 
 
@@ -18,6 +19,7 @@ const server = app.listen(port, () => {
     console.log(`Server is running on ${server.address().port}`);
 })
 
+const io = require('socket.io')(server, {cors:{origin:'*'}});
 
 //Database configurtion
 mongoose.connect(mongoosedbURI)
@@ -32,4 +34,10 @@ app.use(
     })
 )
 app.use(bodyParser.json());
+// Assign socket object to every request
+app.use(function(req, res, next){
+    req.io = io;
+    next();
+});
 app.use("/users", users);
+app.use("/messages", messages);
