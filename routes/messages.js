@@ -5,11 +5,11 @@ const mongoose = require('mongoose');
 const Conversation = require('../model/Conversation');
 const Messages = require('../model/Messages');
 
-const router = express.Router();
+const routes = express.Router();
 
 let jwtUser;
 
-router.use(async (req, res, next) => {
+routes.use(async (req, res, next) => {
     let token = req.headers.auth;
     // checking do you have token
     if (!token) {
@@ -26,109 +26,117 @@ router.use(async (req, res, next) => {
 })
 
 // send a global message
-router.post('/global', async(req, res)=>{
+routes.post('/global', async (req, res) => {
     // validate message 
     // list of vulgar words (req.body.message)
+    // 
     let message = new GlobalMessage(
         {
-            from:jwtUser.id,
-            body:req.body.message
+            from: jwtUser.id,
+            body: req.body.message
         }
     )
-
+    req.io.sockets.emit('messages', req.body.message);
     let response = await message.save();
     res.send(response)
 })
 
-router.get('/globalMessages', async (req, res)=>{
+routes.get('/globalMessages', async (req, res) => {
     // name is missing 1st way
     // let messages = await GlobalMessage.find();
-    // res.send({messages});
+    // res.send(messages)
 
     let messages = await GlobalMessage.aggregate([
         {
-            $lookup:{
-                from:'users',
-                localField:'from',
-                foreignField:'_id',
-                as:'userObj'
+            $lookup: {
+                from: 'users',
+                localField: 'from',
+                foreignField: '_id',
+                as: 'userObj'
             }
         }
     ])
-    .project({
-        'userObj.password':0,
-        'userObj.date':0,
-        'userObj.__v':0,
-        '__v':0
-    })
+        .project({
+            'userObj.password': 0,
+            'userObj.date': 0,
+            'userObj.__v': 0,
+            '__v': 0
+        });
+    res.send(messages)
+
 })
 
-// send a personal message
-router.post('/personal',async(req,res)=>{
-    let from = new mongoose.Types.ObjectId(jwtUser.id); //logged in person lucky
-    let to = new mongoose.Types.ObjectId(req.body.sender); // person to send the msg
 
+
+// send a personal message  (me and ashvary)
+routes.post('/personal', async (req, res) => {
+    let from = new mongoose.Types.ObjectId(jwtUser.id); // logged in person kush
+    let to = new mongoose.Types.ObjectId(req.body.sender); // person to send a msz
     let conversation = await Conversation.findOneAndUpdate(
         {
-            recipents:{
-                $all:[
-                    {$elemMatch:{$eq: from}},
-                    {$elemMatch:{$eq: to}}
+            recipents: {
+                $all: [
+                    { $elemMatch: { $eq: from } },
+                    { $elemMatch: { $eq: to } }
                 ]
             }
         },
         {
-            recipents:[from,to],
-            lastMessage:req.body.message
+            recipents: [from, to],
+            lastMessage: req.body.message
         },
-        {upsert:true,new:true, setDefaultsOnInsert:true}
-
+        { upsert: true, new: true, setDefaultsOnInsert: true }
     )
-    // upsert: true, If the value is true and no documents match the condition, this opt
-    // new: true,Creates a new document if no documents match the query
+    // upsert: true, If the value is true and no documents match the condition, this option inserts a new document into the collection
+    // new: true,  Creates a new document if no documents match the query
 
-    let message = new Messages({ 
+    let message = new Messages({
         conversation: conversation._id,
-        from:from,
-        to:to,
-        body:req.body.message
+        from: from,
+        to: to,
+        body: req.body.message
     })
+    req.io.sockets.emit('messages', req.body.message);
     let messageData = await message.save();
-    res.send(messageData);
+    res.send(messageData)
 })
 
-// get conversation list
+// get conersation list
 // from and everyone
-router.get('/conversationList', async (req,res)=>{
-    let from = new mongoose.Types.ObjectId(jwtUser.id);
-    let conversationlist = await Conversation.aggregate([
-        {
-            $lookup:{
-                from:'users',//which collection I need to look or check
-                localField:'recipents', // what is the key in your collection
-                foreignField:'_id', // what is the key in lookup collection
-                as:'recipentObj'//detail is stored in recipentObj variablle
+routes.get('/conversationList', async (req, res) => {
+    let from = new mongoose.Types.ObjectId(jwtUser.id); // logged in person kush
+    let conversationList = await Conversation.aggregate(
+        [
+            {
+                $lookup: {
+                    from: 'users', // which collection I need to look or check
+                    localField: "recipents", // what is the  key in your collection
+                    foreignField: "_id", // what is the  key in lookup collection
+                    as: "recipentObj" // detail is stored in recipentObj variable
+                }
             }
+        ]
+    )
+    .match(
+        { recipents: 
+            { $all: [
+                { $elemMatch: { $eq: from } 
+            }] 
         }
-    ])
-    .match({
-        recipents:
-        {
-            $all:[
-                {$elemMatch:{$eq: from}}
-            ]
-        }
-    })
-    .project({
+     })
+     .project({
         'recipentObj.password':0,
-        'recipentObj.__v': 0,
-        'recipentObj.date':0
-    }) .exec()
-    res.send(conversationlist);
+        'recipentObj.__v':0,
+        'recipentObj.date':0,
+     })
+     .exec()
+     res.send(conversationList);
 })
-// get conversation list
+
+
+// get conersation list
 // from and to
-router.get('/conversationByUser/query', async (req, res) => {
+routes.get('/conversationByUser/query', async (req, res) => {
     let from = new mongoose.Types.ObjectId(jwtUser.id); // logged in person kush
     let to = new mongoose.Types.ObjectId(req.query.userId);
     let messagesList = await Messages.aggregate(
@@ -165,7 +173,8 @@ router.get('/conversationByUser/query', async (req, res) => {
         'toObj.__v':0,
         'toObj.date':0,
      })
+     .exec()
      res.send(messagesList);
 })
 
-module.exports = router;
+module.exports = routes;
