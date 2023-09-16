@@ -1,4 +1,4 @@
-Chatting App with MERN Stack, Socket.io, and JWT
+#Chatting App with MERN Stack, Socket.io, and JWT
 App Screenshot
 
 Overview
