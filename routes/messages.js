@@ -98,6 +98,7 @@ router.post('/personal',async(req,res)=>{
 })
 
 // get conversation list
+// from and everyone
 router.get('/conversationList', async (req,res)=>{
     let from = new mongoose.Types.ObjectId(jwtUser.id);
     let conversationlist = await Conversation.aggregate([
@@ -122,7 +123,49 @@ router.get('/conversationList', async (req,res)=>{
         'recipentObj.password':0,
         'recipentObj.__v': 0,
         'recipentObj.date':0
-    })
+    }) .exec()
     res.send(conversationlist);
 })
+// get conversation list
+// from and to
+router.get('/conversationByUser/query', async (req, res) => {
+    let from = new mongoose.Types.ObjectId(jwtUser.id); // logged in person kush
+    let to = new mongoose.Types.ObjectId(req.query.userId);
+    let messagesList = await Messages.aggregate(
+        [
+            {
+                $lookup: {
+                    from: 'users', // which collection I need to look or check
+                    localField: "from", // what is the  key in your collection
+                    foreignField: "_id", // what is the  key in lookup collection
+                    as: "fromObj" // detail is stored in recipentObj variable
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users', // which collection I need to look or check
+                    localField: "to", // what is the  key in your collection
+                    foreignField: "_id", // what is the  key in lookup collection
+                    as: "toObj" // detail is stored in recipentObj variable
+                }
+            },
+        ]
+    )
+    .match({
+        $or: [
+            { $and: [{ to: to }, { from: from }] },
+            { $and: [{ to: from }, { from: to }] },
+        ]
+    })
+     .project({
+        'fromObj.password':0,
+        'fromObj.__v':0,
+        'fromObj.date':0,
+        'toObj.password':0,
+        'toObj.__v':0,
+        'toObj.date':0,
+     })
+     res.send(messagesList);
+})
+
 module.exports = router;
