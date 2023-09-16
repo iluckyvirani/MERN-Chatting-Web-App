@@ -4,11 +4,8 @@
   "description": "FSWD Project",
   "main": "index.js",
   "scripts": {
-    "frontend-install": "npm install --prefix frontend",
-    "start": "node index.js",
-    "server": "nodemon index.js",
-    "frontend": "npm start --prefix frontend",
-    "dev": "concurrently \"npm run server\" \"npm run frontend\""
+    "dev":"nodemon index.js",
+    "build":"npm i"
   },
   "keywords": [
     "FSWD",
