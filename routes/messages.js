@@ -66,7 +66,7 @@ router.get('/globalMessages', async (req, res)=>{
 // send a personal message
 router.post('/personal',async(req,res)=>{
     let from = new mongoose.Types.ObjectId(jwtUser.id); //logged in person lucky
-    let to = new mongoose.Types.ObjectId(); // person to send the msg
+    let to = new mongoose.Types.ObjectId(req.body.sender); // person to send the msg
 
     let conversation = await Conversation.findOneAndUpdate(
         {
@@ -81,11 +81,11 @@ router.post('/personal',async(req,res)=>{
             recipents:[from,to],
             lastMessage:req.body.message
         },
-        {upsert:true,new:true}
+        {upsert:true,new:true, setDefaultsOnInsert:true}
 
     )
     // upsert: true, If the value is true and no documents match the condition, this opt
-    // new: true, If the value is true and no documents match the condition, this opt
+    // new: true,Creates a new document if no documents match the query
 
     let message = new Messages({ 
         conversation: conversation._id,
@@ -95,5 +95,34 @@ router.post('/personal',async(req,res)=>{
     })
     let messageData = await message.save();
     res.send(messageData);
+})
+
+// get conversation list
+router.get('/conversationList', async (req,res)=>{
+    let from = new mongoose.Types.ObjectId(jwtUser.id);
+    let conversationlist = await Conversation.aggregate([
+        {
+            $lookup:{
+                from:'users',//which collection I need to look or check
+                localField:'recipents', // what is the key in your collection
+                foreignField:'_id', // what is the key in lookup collection
+                as:'recipentObj'//detail is stored in recipentObj variablle
+            }
+        }
+    ])
+    .match({
+        recipents:
+        {
+            $all:[
+                {$elemMatch:{$eq: from}}
+            ]
+        }
+    })
+    .project({
+        'recipentObj.password':0,
+        'recipentObj.__v': 0,
+        'recipentObj.date':0
+    })
+    res.send(conversationlist);
 })
 module.exports = router;
