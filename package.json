@@ -4,6 +4,8 @@
   "description": "FSWD Project",
   "main": "index.js",
   "scripts": {
+    "devp":"nodemon index.js",
+    "build":"npm i",
     "frontend-install": "npm install --prefix frontend",
     "start": "node index.js",
     "server": "nodemon index.js",
@@ -19,6 +21,7 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "build": "^0.1.4",
     "concurrently": "^8.2.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -27,4 +30,5 @@
     "mongoose": "^7.4.4",
     "socket.io": "^4.7.2"
   }
+ 
 }
