@@ -89,7 +89,7 @@ const ChatBox = (props) => {
   const [messages, setMessages] = useState([]);
   const [lastMessage, setLastMessage] = useState(null);
 
-  console.log({messages});
+  console.log({ messages });
   const getGlobalMessages = useGetGlobalMessages();
   const sendGlobalMessage = useSendGlobalMessage();
   const getConversationMessages = useGetConversationMessages();
@@ -106,7 +106,7 @@ const ChatBox = (props) => {
   useEffect(() => {
     const socket = socketIOClient(process.env.REACT_APP_API_URL);
     socket.on("messages", (data) => setLastMessage(data));
-    console.log({lastMessage});
+    console.log({ lastMessage });
   }, []);
 
   const reloadMessages = () => {
@@ -139,7 +139,7 @@ const ChatBox = (props) => {
       });
     }
   };
-  
+
   return (
     <Grid container className={classes.root}>
       <Grid item xs={12} className={classes.headerRow}>
@@ -152,36 +152,36 @@ const ChatBox = (props) => {
       <Grid item xs={12}>
         <Grid container className={classes.messageContainer}>
           <Grid item xs={12} className={classes.messagesRow}>
-            {messages && messages.length>0 && (
+            {messages && messages.length > 0 && (
               <List>
                 {
-                messages.map((m) => (
-                  <ListItem
-                    key={m._id}
-                    className={classnames(classes.listItem, {
-                      [`${classes.listItemRight}`]:
-                        m._id === currentUserId,
-                    })}
-                    alignItems="flex-start"
-                  >
-                    <ListItemAvatar className={classes.avatar}>
-                      <Avatar>
-                        {props.scope === "Global Chat" && commonUtilites.getInitialsFromName(m?.userObj[0]?.name)}
-                        {props.scope != "Global Chat" && m.fromObj && commonUtilites.getInitialsFromName(m?.fromObj[0]?.name)}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      classes={{
-                        root: classnames(classes.messageBubble, {
-                          [`${classes.messageBubbleRight}`]:
-                            m._id === currentUserId,
-                        }),
-                      }}
-                      primary={m && m.name}
-                      secondary={<React.Fragment>{m.body}</React.Fragment>}
-                    />
-                  </ListItem>
-                ))}
+                  messages.map((m) => (
+                    <ListItem
+                      key={m._id}
+                      className={classnames(classes.listItem, {
+                        [`${classes.listItemRight}`]:
+                          m._id === currentUserId,
+                      })}
+                      alignItems="flex-start"
+                    >
+                      <ListItemAvatar className={classes.avatar}>
+                        <Avatar>
+                          {props.scope === "Global Chat" && m && m.userObj && m.userObj.length > 0 && commonUtilites.getInitialsFromName(m.userObj[0].name)}
+                          {props.scope !== "Global Chat" && m && m.fromObj && m.fromObj.length > 0 && commonUtilites.getInitialsFromName(m.fromObj[0].name)}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        classes={{
+                          root: classnames(classes.messageBubble, {
+                            [`${classes.messageBubbleRight}`]:
+                              m._id === currentUserId,
+                          }),
+                        }}
+                        primary={m && m.name}
+                        secondary={<React.Fragment>{m.body}</React.Fragment>}
+                      />
+                    </ListItem>
+                  ))}
               </List>
             )}
             <div ref={chatBottom} />
